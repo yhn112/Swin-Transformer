@@ -83,6 +83,7 @@ def main(config):
     model = build_model(config)
     model.cuda()
     logger.info(str(model))
+    print("RANK", config.LOCAL_RANK)
 
     optimizer = build_optimizer(config, model)
     if config.AMP_OPT_LEVEL != "O0":
@@ -234,7 +235,8 @@ def train_one_epoch(config, model, criterion, data_loader, optimizer, epoch, mix
                 f'mem {memory_used:.0f}MB')
     epoch_time = time.time() - start
     logger.info(f"EPOCH {epoch} training takes {datetime.timedelta(seconds=int(epoch_time))}")
-    wandb.log({"train/grad_norm": norm_meter.avg, "train/lr": lr, "train/Loss": loss_meter.avg})
+    if config.LOCAL_RANK == 0:
+        wandb.log({"train/grad_norm": norm_meter.avg, "train/lr": lr, "train/Loss": loss_meter.avg})
 
 
 @torch.no_grad()
@@ -280,7 +282,8 @@ def validate(config, data_loader, model):
                 f'Acc@1 {acc1_meter.val:.3f} ({acc1_meter.avg:.3f})\t'
                 f'Acc@5 {acc5_meter.val:.3f} ({acc5_meter.avg:.3f})\t'
                 f'Mem {memory_used:.0f}MB')
-    wandb.log({"val/Acc@1": acc1_meter.avg, "val/Acc@5": acc5_meter.avg, "val/Loss": loss_meter.avg})
+    if config.LOCAL_RANK == 0:
+        wandb.log({"val/Acc@1": acc1_meter.avg, "val/Acc@5": acc5_meter.avg, "val/Loss": loss_meter.avg})
     logger.info(f' * Acc@1 {acc1_meter.avg:.3f} Acc@5 {acc5_meter.avg:.3f}')
     return acc1_meter.avg, acc5_meter.avg, loss_meter.avg
 
