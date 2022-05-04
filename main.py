@@ -78,7 +78,8 @@ def parse_option():
 
 def main(config):
     dataset_train, dataset_val, data_loader_train, data_loader_val, mixup_fn = build_loader(config)
-    wandb.init()
+    if config.LOCAL_RANK == 0:
+        wandb.init()
     logger.info(f"Creating model:{config.MODEL.TYPE}/{config.MODEL.NAME}")
     model = build_model(config)
     model.cuda()
